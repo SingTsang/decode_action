@@ -1,58 +1,80 @@
-#2024-08-08 02:38:19
+#2024-08-08 02:39:09
+import hashlib
 import requests
 import os
 import time
 import random
-import hashlib
+def version():
+ print(requests.get("https://gitee.com/HuaJiB/yuanshen34/raw/master/pubilc.txt").text)
 class yuanshen():
- def __init__(self,cookie):
+ def __init__(self,cookie)->None:
   self.cookie=cookie
-  self.h={"Host":"app.zhuanbang.net","accept":"application/json, image/webp","user-agent":"Mozilla/5.0 (Linux; Android 12; M2104K10AC Build/SP1A.210812.016; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/96.0.4664.104 Mobile Safari/537.36 HuoNiuFusion/1.25.0_231652","x-requested-with":"XMLHttpRequest","sec-fetch-site":"same-origin","sec-fetch-mode":"cors","sec-fetch-dest":"empty","referer":"https://app.zhuanbang.net/assist/activity/47","accept-language":"zh-CN,zh;q=0.9,en-US;q=0.8,en;q=0.7","accept-encoding":"gzip","Cookie":f"NiuToken={self.cookie}"}
- def sign_(self):
-  d=f"{self.csrftoken}#{self.sessionId}#{self.time}"
-  byte_string=d.encode('utf-8')
-  sha1=hashlib.sha1()
-  sha1.update(byte_string)
-  sign=sha1.hexdigest()
-  return sign
- def video(self,key):
-  i=0
-  while True:
-   i+=1
-   url=f"https://app.zhuanbang.net/{key}/launch?_random={int(time.time() * 1000)}&type=slide"
-   r=requests.get(url,headers=self.h).json()
-   if r['code']==0:
-    print(f"第[{i}]个红包获取信息成功")
-    self.csrftoken=r['data']['extArgs']['csrfToken']
-    self.sessionId=r['data']['extArgs']['sessionId']
-    self.time=int(time.time())
-    url=f"https://app.zhuanbang.net/{key}/award/grant?_t={self.time}"
-    data={"csrfToken":f"{self.csrftoken}","deviceId":f"{self.sessionId}","timestamp":f"{self.time}","sign":f"{self.sign_()}"}
-    r=requests.post(url,headers=self.h,data=data).json()
-    if r['code']==0:
-     print(f"第[{i}]个红包领取成功,获得[{r['data']['awardMoney']}]元")
+  self.verid="1.1.0"
+  self.url="https://ksf.plscn.com"
+  self.headers={"Host":"ksf.plscn.com","Connection":"keep-alive","Content-Length":"123","charset":"utf-8","User-Agent":"Mozilla/5.0 (Linux; Android 13; 23054RA19C Build/TP1A.220624.014; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/122.0.6261.120 Mobile Safari/537.36 XWEB/1220053 MMWEBSDK/20240404 MMWEBID/98 MicroMessenger/8.0.49.2600(0x28003133) WeChat/arm64 Weixin NetType/5G Language/zh_CN ABI/arm64 MiniProgramEnv/android","x-account-sign":"","x-account-key":"d3hiNmQ5M2Q3YWY5M2YzMWRh","content-type":"application/x-www-form-urlencoded","Accept-Encoding":"gzip,compress,br,deflate","Referer":"https://servicewechat.com/wxb6d93d7af93f31da/104/page-frame.html"}
+ def sign_(self,e):
+  n=[]
+  for t in e.values():
+   n.append(t)
+  i="wxb6d93d7af93f31da"+"wa_smartgo"
+  o=sorted(n)
+  r=""
+  for item in o:
+   r+=str(item)
+  r+=i
+  return hashlib.md5(r.encode('utf-8')).hexdigest()
+ def sign(self):
+  sig_day=time.strftime("%Y-%m-%d",time.localtime())
+  url=f"{self.url}/brandwxa/api/bonus/signin"
+  data={"pageid":"733","signday":f"{sig_day}","encryptsessionid":f"{self.cookie}","qr":"0","timestamp":f"{int(time.time() * 1000)}","versionid":f"{self.verid}"}
+  self.headers["x-account-sign"]=self.sign_(data)
+  r=requests.post(url,data=data,headers=self.headers).json()
+  if r['errcode']==0:
+   print(f"🎉️签到成功，获得[{r['result']['signrecords']['bonus']}]积分")
+  else:
+   print(f"⛔️签到失败[{r['errmsg']}]")
+ def video(self):
+  url=f"{self.url}/brandwxa/api/wxa/getarticles"
+  data={"itemid":"1010","tagid":"61","pageno":"1","encryptsessionid":f"{self.cookie}","qr":"0","timestamp":f"{int(time.time() * 1000)}","versionid":"1.1.0"}
+  self.headers["x-account-sign"]=self.sign_(data)
+  r=requests.post(url,data=data,headers=self.headers).json()
+  if r['errcode']==0:
+   print("获取视频列表成功！")
+   j=0
+   for i in r['result']:
+    id=i.get('articleid')
+    url=f"{self.url}/brandwxa/api/wxa/onitemevt"
+    data={"event":"viewvideo","type":"start","linkid":"0","articleid":f"{id}","itemid":"1010","encryptsessionid":f"{self.cookie}","qr":"0","timestamp":f"{int(time.time() * 1000)}","versionid":"1.1.0"}
+    self.headers["x-account-sign"]=self.sign_(data)
+    r=requests.post(url,data=data,headers=self.headers).json()
+    if r['errcode']==0:
+     print(f"🎉️观看视频ID:[{id}]----Ok!")
+     j+=1
     else:
-     print(f"第[{i}]个红包领取失败---[{r['msg']}]")
+     print(f"⛔️观看视频ID[{id}]失败---[{r['errmsg']}]")
+    time.sleep(random.randint(5,12))
+    if j==3:
      break
-   else:
-    print(f"第[{i}]个获取红包信息失败---[{r['msg']}]")
-    break
-   if i>=21:
-    break
-   time.sleep(random.randint(20,48))
+ def userinfo(self):
+  url=f"{self.url}/brandwxa/api/vip/getinfo"
+  data={"itemid":"1201","encryptsessionid":f"{self.cookie}","qr":"0","timestamp":f"{int(time.time() * 1000)}","versionid":"1.1.0"}
+  self.headers["x-account-sign"]=self.sign_(data)
+  r=requests.post(url,data=data,headers=self.headers).json()
+  if r['errcode']==0:
+   print(f"💰️查询信息成功,用户剩余积分[{r['result']['vipbonus']}]")
+  else:
+   print(f"⛔️查询用户信息失败---[{r['errmsg']}]")
  def main(self):
-  print("===========开始执行快手刷视频===========")
-  self.video("kwai_video")
-  print("===========快手刷视频执行完毕===========")
-  print("===========开始执行抖音刷视频===========")
-  self.video("pangle_video")
-  print("===========抖音刷视频执行完毕===========")
+  self.sign()
+  self.video()
+  self.userinfo()
 if __name__=='__main__':
+ version()
  cookie=''
  if not cookie:
-  cookie=os.getenv("yuanshen_zb")
+  cookie=os.getenv("yuanshen_ksf")
   if not cookie:
-   print("⛔️请设置环境变量:yuanshen_zb")
+   print("请设置环境变量:yuanshen_ksf")
    exit()
  cookies=cookie.split("@")
  print(f"一共获取到{len(cookies)}个账号")
@@ -62,4 +84,5 @@ if __name__=='__main__':
   main=yuanshen(cookie)
   main.main()
   print(f"--------第{i}个账号执行完毕--------")
+  time.sleep(20)
   i+=1
